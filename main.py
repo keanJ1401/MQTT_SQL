@@ -1,16 +1,20 @@
-# This is a sample Python script.
+import paho.mqtt.client as mqtt
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+#Connection success callback
+def on_connect(client, userdata, flags, rc):
+    print('Connected with result code '+str(rc))
+    client.subscribe('sensor/#')
 
+# Message receiving callback
+def on_message(client, userdata, msg):
+    print(msg.topic+" "+str(msg.payload))
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+client = mqtt.Client()
 
+# Specify callback function
+client.on_connect = on_connect
+client.on_message = on_message
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# Establish a connection
+client.connect('192.168.0.101', 1883, 60)
+client.loop_forever()
