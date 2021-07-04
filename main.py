@@ -1,36 +1,5 @@
 import paho.mqtt.client as mqtt
-import json
-
-
-# Connection success callback
-def on_connect(client, userdata, flags, rc):
-    print(f"Connected with result code {str(rc)}")
-    client.subscribe("sensor/#")
-
-
-# Message receiving callback
-
-
-def on_message(client, userdata, msg):
-    # payload = json.loads(msg.payload.decode('ascii')[:-1])
-    # print(f"{msg.topic} {payload}")
-    pass
-
-
-def mq2_handle(client, userdata, msg):
-    payload = json.loads(msg.payload.decode('ascii')[:-1])
-    Sensors.add(7, payload)
-
-
-def bmp180_handle(client, userdata, msg):
-    payload = json.loads(msg.payload.decode('ascii')[:-1])
-    Sensors.add(6, payload)
-
-
-def si7021_handle(client, userdata, msg):
-    payload = json.loads(msg.payload.decode('ascii')[:-1])
-    Sensors.add(11, payload)
-
+from models.handle_mqtt import *
 
 mqtt_client = mqtt.Client(client_id="SQL_Handle", clean_session=True)
 

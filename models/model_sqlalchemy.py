@@ -3,10 +3,10 @@ from sqlalchemy import Column, String, Integer, TIMESTAMP, JSON, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
-
+from url.sercet_url import sql_database
 
 # SQL ORM
-db = create_engine('postgresql://postgres:user@35.221.141.147/database')
+db = create_engine(sql_database)
 base = declarative_base()
 Session = sessionmaker(db)
 session = Session()
