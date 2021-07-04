@@ -1,6 +1,7 @@
 import paho.mqtt.client as mqtt
-from sqlalchemy import create_engine, func, join, update
-from sqlalchemy import Column, String, Integer, TIMESTAMP, JSON, Boolean, ForeignKey
+import json
+from sqlalchemy import create_engine, func, update, delete
+from sqlalchemy import Column, String, Integer, TIMESTAMP, JSON, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -18,10 +19,19 @@ class Home(base):
     type = Column(String)
     name = Column(String)
 
-    def __init__(self, device_id, type, name):
+    def __init__(self, sensor_id, device_id, type, name):
+        self.sensor_id = sensor_id
         self.device_id = device_id
         self.type = type
         self.name = name
+
+    @classmethod
+    def add(cls, sensor_id, device_id, type, name):
+        new_device = cls(sensor_id=sensor_id, device_id=device_id, type=type, name=name)
+        session.add(new_device)
+        session.commit()
+        session.rollback()
+        return new_device
 
 
 class Devices(base):
@@ -42,7 +52,8 @@ class Devices(base):
         self.location = location
 
     def json(self):
-        return {'device_id': self.device_id, 'name': self.name, 'ip_device': self.ip_device, 'parent_id': self.parent_id, 'up_time': self.up_time, 'location': self.location}
+        return {'device_id': self.device_id, 'name': self.name, 'ip_device': self.ip_device,
+                'parent_id': self.parent_id, 'up_time': self.up_time, 'location': self.location}
 
     @classmethod
     def get_by_device_id(cls, device_id: int):
@@ -57,11 +68,27 @@ class Devices(base):
         return devices
 
     @classmethod
-    def add(cls, device_id, name, ip_device='NaN', parent_id=None, up_time=None, location= 'NaN'):
-        new_devices = cls(device_id=device_id, name=name, ip_device=ip_device, location=location, parent_id=parent_id, up_time=up_time)
+    def add(cls, device_id, name, ip_device='NaN', parent_id=None, up_time=None, location='NaN'):
+        new_devices = cls(device_id=device_id, name=name, ip_device=ip_device,
+                          location=location, parent_id=parent_id, up_time=up_time)
         session.add(new_devices)
         session.commit()
         session.rollback()
+
+    @classmethod
+    def update_name(cls, name=name):
+        stmt = update(cls).where(cls.name == name).values(
+            name=name).execution_options(synchronize_session="fetch")
+        result = session.execute(stmt)
+        session.rollback()
+        return result
+
+    @classmethod
+    def delete_by_name(cls, name=name):
+        stmt = delete(cls).where(cls.name == name).execution_options(synchronize_session="fetch")
+        result = session.execute(stmt)
+        session.rollback()
+        return result
 
 
 class Sensors(base):
@@ -135,7 +162,7 @@ class Actuators(base):
     @classmethod
     def get_last_state(cls):
         last_date = session.query(
-            Actuators.sensor_id,func.max(Actuators.time).label('state_up_to_date')).group_by(
+            Actuators.sensor_id, func.max(Actuators.time).label('state_up_to_date')).group_by(
             Actuators.sensor_id).subquery()
         query = session.query(Actuators).join(last_date, Actuators.time == last_date.c.state_up_to_date).order_by(
             Actuators.sensor_id).all()
@@ -160,55 +187,50 @@ class Actuators(base):
         return result
 
 
-Session = sessionmaker(db)
-session = Session()
-
-base.metadata.create_all(db)
-
-rs = Actuators.add(2, 1)
-print(rs)
-data = Actuators.get_last_state()
-for d in data:
-    print(d)
-'''
-# Create
-nodemcu_esp8266 = Devices(device_id=5, name="ESP8266", ip_device="NaN", parent_id=None, up_time=None, location="NaN")
-session.add(nodemcu_esp8266)
-session.commit()
-
-# Read
-devices = session.query(Devices)
-for device in devices:
-    print(device.name)
-
-# Update
-nodemcu_esp8266.name = 'ESP32'
-session.commit()
-
-# Delete
-session.delete(nodemcu_esp8266)
-session.commit()
-'''
-
-'''
 # Connection success callback
 def on_connect(client, userdata, flags, rc):
-    print('Connected with result code '+str(rc))
-    client.subscribe('sensor/#')
+    print(f"Connected with result code {str(rc)}")
+    client.subscribe("sensor/#")
 
 
 # Message receiving callback
-def on_message(client, userdata, msg):
-    print(msg.topic+" "+str(msg.payload))
 
-client = mqtt.Client()
+
+def on_message(client, userdata, msg):
+    # payload = json.loads(msg.payload.decode('ascii')[:-1])
+    # print(f"{msg.topic} {payload}")
+    pass
+
+
+def mq2_handle(client, userdata, msg):
+    payload = json.loads(msg.payload.decode('ascii')[:-1])
+    Sensors.add(7, payload)
+
+
+def bmp180_handle(client, userdata, msg):
+    payload = json.loads(msg.payload.decode('ascii')[:-1])
+    Sensors.add(6, payload)
+
+
+def si7021_handle(client, userdata, msg):
+    payload = json.loads(msg.payload.decode('ascii')[:-1])
+    Sensors.add(11, payload)
+
+
+mqtt_client = mqtt.Client(client_id="SQL_Handle", clean_session=True)
 
 # Specify callback function
-client.on_connect = on_connect
-client.on_message = on_message
+mqtt_client.on_connect = on_connect
+mqtt_client.on_message = on_message
+mqtt_client.message_callback_add("+/mq2", mq2_handle)
+mqtt_client.message_callback_add("+/bmp180", bmp180_handle)
+mqtt_client.message_callback_add("+/si7021", si7021_handle)
 
 # Establish a connection
-client.connect('192.168.0.101', 1883, 60)
-client.loop_forever()
-'''
+mqtt_client.connect(host="192.168.0.101", port=1883, keepalive=60)
+mqtt_client.loop_forever()
+
+Session = sessionmaker(db)
+session = Session()
+base.metadata.create_all(db)
 
