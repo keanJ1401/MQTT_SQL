@@ -17,7 +17,7 @@ mqtt_client.message_callback_add("+/door", door_handle)
 mqtt_client.message_callback_add("+/fan", fan_handle)
 
 # Establish a connection
-mqtt_client.connect(host="192.168.0.102", port=1883, keepalive=60)
+mqtt_client.connect(host="localhost", port=1883, keepalive=60)
 mqtt_client.loop_forever()
 
 
