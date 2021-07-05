@@ -26,6 +26,28 @@ class Home(base):
         self.type = type
         self.name = name
 
+    def json(self):
+        return {'sensor_id': self.sensor_id, 'device_id': self.device_id, 'type': self.type,
+                'name': self.name}
+
+    @classmethod
+    def get_all_device(cls):
+        query = session.query(cls)
+        homes = [i.json() for i in query]
+        return homes
+
+    @classmethod
+    def get_by_device_id(cls, device_id: int):
+        device_data = session.query(cls).filter_by(device_id=device_id).first().json()
+        session.rollback()
+        return device_data
+
+    @classmethod
+    def get_by_sensor_id(cls, sensor_id: int):
+        device_data = session.query(cls).filter_by(sensor_id=sensor_id).frist().json()
+        session.rollback()
+        return device_data
+
     @classmethod
     def add(cls, sensor_id, device_id, type, name):
         new_device = cls(sensor_id=sensor_id, device_id=device_id, type=type, name=name)
