@@ -11,9 +11,11 @@ mqtt_client.on_message = on_message
 mqtt_client.message_callback_add("+/mq2", mq2_handle)
 mqtt_client.message_callback_add("+/bmp180", bmp180_handle)
 mqtt_client.message_callback_add("+/si7021", si7021_handle)
+mqtt_client.message_callback_add("+/max44009", max44009_handle)
 mqtt_client.message_callback_add("+/light1", light1_handle)
 mqtt_client.message_callback_add("+/light2", light2_handle)
-mqtt_client.message_callback_add("+/door", door_handle)
+mqtt_client.message_callback_add("+/door/control", door_control_handle)
+mqtt_client.message_callback_add("+/door/mode", door_mode_handle)
 mqtt_client.message_callback_add("+/fan", fan_handle)
 
 # Establish a connection

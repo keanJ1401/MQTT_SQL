@@ -30,23 +30,29 @@ def si7021_handle(client, userdata, msg):
     payload = json.loads(msg.payload.decode('ascii')[:-1])
     Sensors.add(11, payload, datetime.now())
 
-
+def max44009_handle(client, userdata, msg):
+    payload = json.loads(msg.payload.decode('ascii')[:-1])
+    Sensors.add(12, payload, datetime.now())
+    
 # Actuators
 def light1_handle(client, userdata, msg):
-    payload = str(msg.payload.decode('ascii')[:-1])
+    payload = int(msg.payload.decode('ascii'))
     Actuators.add(1, payload, datetime.now())
 
 
 def light2_handle(client, userdata, msg):
-    payload = str(msg.payload.decode('ascii')[:-1])
+    payload = int(msg.payload.decode('ascii'))
     Actuators.add(2, payload, datetime.now())
 
 
-def door_handle(client, userdata, msg):
-    payload = str(msg.payload.decode('ascii')[:-1])
+def door_control_handle(client, userdata, msg):
+    payload = int(msg.payload.decode('ascii'))
     Actuators.add(3, payload, datetime.now())
 
+def door_mode_handle(client, userdata, msg):
+    payload = int(msg.payload.decode('ascii'))
+    Actuators.add(4, payload, datetime.now())
 
 def fan_handle(client, userdata, msg):
-    payload = str(msg.payload.decode('ascii')[:-1])
-    Actuators.add(4, payload, datetime.now())
+    payload = int(msg.payload.decode('ascii'))
+    Actuators.add(5, payload, datetime.now())

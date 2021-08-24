@@ -3,17 +3,14 @@ from sqlalchemy import Column, String, Integer, TIMESTAMP, JSON, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
-from url.sercet_url import sql_database
+# from url.sercet_url import sql_database
 
 # SQL ORM
-db = create_engine(sql_database)
-base = declarative_base()
-Session = sessionmaker(db)
-session = Session()
-base.metadata.create_all(db)
+db = create_engine('postgresql://postgres:user@35.221.141.147/database')
+Base = declarative_base()
 
 
-class Home(base):
+class Home(Base):
     __tablename__ = 'home'
     sensor_id = Column(Integer, primary_key=True)
     device_id = Column(Integer, ForeignKey('devices.device_id'))
@@ -57,7 +54,7 @@ class Home(base):
         return new_device
 
 
-class Devices(base):
+class Devices(Base):
     __tablename__ = 'devices'
     device_id = Column(Integer, primary_key=True)
     name = Column(String)
@@ -114,10 +111,10 @@ class Devices(base):
         return result
 
 
-class Sensors(base):
+class Sensors(Base):
     __tablename__ = 'sensors'
     id = Column(Integer, primary_key=True)
-    sensor_id = Column(Integer, ForeignKey('sensors.sensor_id'))
+    sensor_id = Column(Integer, ForeignKey('home.sensor_id'))
     value = Column(JSON)
     time = Column(TIMESTAMP)
 
@@ -162,9 +159,10 @@ class Sensors(base):
         return result
 
 
-class Actuators(base):
+class Actuators(Base):
     __tablename__ = 'actuators'
-    sensor_id = Column(Integer, ForeignKey('sensors.sensor_id'), primary_key=True)
+    id = Column(Integer, primary_key=True)
+    sensor_id = Column(Integer, ForeignKey('home.sensor_id'))
     state = Column(Integer)
     time = Column(TIMESTAMP)
 
@@ -208,3 +206,8 @@ class Actuators(base):
         result = session.execute(stmt)
         session.rollback()
         return result
+
+
+Session = sessionmaker(db)
+session = Session()
+Base.metadata.create_all(db)
